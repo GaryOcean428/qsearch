@@ -39,6 +39,8 @@ class QSearchConfig:
     google_client_secret: str | None
     microsoft_client_id: str | None
     microsoft_client_secret: str | None
+    serper_api_key: str | None
+    bing_api_key: str | None
 
     @property
     def auth_enabled(self) -> bool:
@@ -78,6 +80,9 @@ class QSearchConfig:
         microsoft_client_id = os.environ.get("MICROSOFT_CLIENT_ID")
         microsoft_client_secret = os.environ.get("MICROSOFT_CLIENT_SECRET")
 
+        serper_api_key = os.environ.get("SERPER_API_KEY")
+        bing_api_key = os.environ.get("BING_SEARCH_API")
+
         return QSearchConfig(
             db_url=db_url,
             redis_url=redis_url,
@@ -89,4 +94,6 @@ class QSearchConfig:
             google_client_secret=google_client_secret,
             microsoft_client_id=microsoft_client_id,
             microsoft_client_secret=microsoft_client_secret,
+            serper_api_key=serper_api_key,
+            bing_api_key=bing_api_key,
         )
