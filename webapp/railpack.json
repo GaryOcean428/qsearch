@@ -13,8 +13,7 @@
     "install": {
       "inputs": [{ "step": "clean" }],
       "commands": [
-        { "src": ".", "dest": "." },
-        "npm install"
+        { "cmd": "npm install" }
       ]
     },
     "build": {
