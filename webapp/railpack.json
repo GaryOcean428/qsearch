@@ -5,9 +5,13 @@
     "node": "20"
   },
   "steps": {
+    "install": {
+      "commands": [
+        { "cmd": "npm ci --omit=dev" }
+      ]
+    },
     "build": {
       "commands": [
-        { "cmd": "npm ci" },
         { "cmd": "npm run build" }
       ]
     }
