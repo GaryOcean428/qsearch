@@ -6,14 +6,18 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from starlette.middleware.sessions import SessionMiddleware
 
 from qsearch.api.deps import get_cache, get_config, get_orchestrator
+from qsearch.api.auth import router as auth_router
 from qsearch.api.routes_v1 import router as v1_router
 
 app = FastAPI(title="qsearch", version="0.1.0")
 _log = logging.getLogger("qsearch.api")
 
 _cfg = get_config()
+if _cfg.session_secret:
+    app.add_middleware(SessionMiddleware, secret_key=_cfg.session_secret)
 if _cfg.cors_allow_origins:
     app.add_middleware(
         CORSMiddleware,
@@ -24,6 +28,7 @@ if _cfg.cors_allow_origins:
     )
 
 app.include_router(v1_router, prefix="/api/v1")
+app.include_router(auth_router)
 
 
 class SearchRequest(BaseModel):
