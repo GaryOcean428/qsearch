@@ -29,7 +29,8 @@ export function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const isDark = resolvedTheme === "dark";
-  const currentLogo = isDark ? logoDark : logoLight;
+  // FIXED: Dark logo (with neon) for dark theme, light logo for light theme
+  const currentLogo = isDark ? logoLight : logoDark;
 
   async function onSearch(e?: React.FormEvent) {
     e?.preventDefault();
@@ -49,34 +50,50 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-body)' }}>
-      <div className="mx-auto max-w-6xl px-5 py-8">
+    <div className="min-h-screen relative overflow-hidden" style={{ background: 'var(--bg-body)' }}>
+      {/* Cyberpunk Background Grid Effect */}
+      <div 
+        className="absolute inset-0 opacity-5 pointer-events-none"
+        style={{
+          backgroundImage: isDark 
+            ? 'linear-gradient(var(--accent-primary) 1px, transparent 1px), linear-gradient(90deg, var(--accent-primary) 1px, transparent 1px)'
+            : 'linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)',
+          backgroundSize: '50px 50px'
+        }}
+      />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-6 py-12">
         {/* Header with Logo and Auth */}
-        <header className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between mb-10">
+        <header className="flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between mb-16">
           <div className="flex items-center gap-4">
             <img
               src={currentLogo}
               alt="qsearch"
-              className="h-12 logo-glow"
-              style={{ filter: isDark ? 'drop-shadow(0 0 8px rgba(0, 191, 255, 0.5))' : 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))' }}
+              className="h-14 transition-all duration-300 hover:scale-105"
+              style={{ 
+                filter: isDark 
+                  ? 'drop-shadow(0 0 12px rgba(0, 191, 255, 0.6)) drop-shadow(0 0 24px rgba(57, 255, 20, 0.3))' 
+                  : 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15))'
+              }}
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {/* Theme Selector */}
             <select
-              className="glass-panel px-3 py-2 text-sm rounded-lg outline-none transition"
+              className="glass-panel px-4 py-2.5 text-sm font-medium rounded-lg outline-none transition-all duration-200 cursor-pointer hover:scale-105"
               style={{
                 color: 'var(--text-primary)',
                 borderColor: 'var(--border-color)',
+                background: 'var(--bg-panel)',
               }}
               value={theme}
               onChange={(e) => setTheme(e.target.value as any)}
               aria-label="Theme"
             >
-              <option value="system">System</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
+              <option value="system">🌐 System</option>
+              <option value="light">☀️ Light</option>
+              <option value="dark">🌙 Dark</option>
             </select>
 
             {/* Auth Button/Menu */}
@@ -86,7 +103,7 @@ export function App() {
               ) : (
                 <button
                   onClick={() => setShowLoginModal(true)}
-                  className="px-4 py-2 rounded-lg font-semibold transition"
+                  className="px-6 py-2.5 rounded-lg font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
                   style={{
                     background: 'var(--accent-secondary)',
                     color: 'var(--color-dark)',
@@ -100,21 +117,42 @@ export function App() {
           </div>
         </header>
 
-        {/* Subtitle */}
-        <div className="mb-8 text-center">
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Geometric ranking over basin coordinates • Local-first search with no external APIs
+        {/* Hero Section */}
+        <div className="mb-12 text-center">
+          <h1 
+            className="text-5xl md:text-6xl font-bold mb-6 tracking-tight"
+            style={{ 
+              color: 'var(--text-heading)',
+              textShadow: isDark ? '0 0 20px rgba(0, 191, 255, 0.5), 0 0 40px rgba(57, 255, 20, 0.2)' : 'none'
+            }}
+          >
+            Geometric Search Engine
+          </h1>
+          <p 
+            className="text-lg md:text-xl max-w-3xl mx-auto leading-relaxed"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            <span className="font-semibold" style={{ color: 'var(--accent-primary)' }}>
+              Basin coordinate geometry
+            </span>
+            {" • "}
+            Local-first search with no external APIs
+            {" • "}
+            <span className="font-semibold" style={{ color: 'var(--accent-secondary)' }}>
+              Privacy-focused
+            </span>
           </p>
         </div>
 
         {/* Search Form */}
-        <main className="mt-8">
-          <form onSubmit={onSearch} className="flex flex-col gap-3 sm:flex-row">
+        <main className="mt-12">
+          <form onSubmit={onSearch} className="flex flex-col gap-4 sm:flex-row max-w-5xl mx-auto">
             <input
-              className="glass-panel w-full flex-1 px-5 py-4 text-base rounded-xl outline-none transition"
+              className="glass-panel w-full flex-1 px-6 py-5 text-lg rounded-2xl outline-none transition-all duration-200 focus:scale-[1.02]"
               style={{
                 color: 'var(--text-primary)',
                 borderColor: 'var(--border-color)',
+                background: 'var(--bg-panel)',
               }}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -122,10 +160,11 @@ export function App() {
               required
             />
             <input
-              className="glass-panel w-full px-4 py-4 text-base rounded-xl outline-none transition sm:w-28"
+              className="glass-panel w-full px-5 py-5 text-lg rounded-2xl outline-none transition-all duration-200 sm:w-32 text-center font-mono"
               style={{
                 color: 'var(--text-primary)',
                 borderColor: 'var(--border-color)',
+                background: 'var(--bg-panel)',
               }}
               type="number"
               min={1}
@@ -135,7 +174,7 @@ export function App() {
               aria-label="Result limit"
             />
             <button
-              className="px-6 py-4 rounded-xl font-semibold transition disabled:opacity-60"
+              className="px-8 py-5 rounded-2xl font-bold text-lg transition-all duration-200 disabled:opacity-60 hover:scale-105 active:scale-95"
               style={{
                 background: 'var(--accent-secondary)',
                 color: 'var(--color-dark)',
@@ -144,37 +183,49 @@ export function App() {
               disabled={loading}
               type="submit"
             >
-              {loading ? "Searching…" : "Search"}
+              {loading ? "Searching…" : "🔍 Search"}
             </button>
           </form>
 
           {/* Status Message */}
-          <div className="mt-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <div className="mt-4 text-center text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
             {error ? (
-              <span style={{ color: 'var(--accent-secondary)' }}>⚠ {error}</span>
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg" style={{ background: 'var(--bg-panel)', color: 'var(--accent-secondary)' }}>
+                ⚠️ {error}
+              </span>
             ) : cacheHit === null ? (
               <span>&nbsp;</span>
             ) : (
-              <span>
-                Cache: <span className="font-semibold">{cacheHit ? "✓ hit" : "✗ miss"}</span>
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg" style={{ background: 'var(--bg-panel)' }}>
+                Cache: <span className="font-bold" style={{ color: cacheHit ? 'var(--accent-secondary)' : 'var(--accent-primary)' }}>
+                  {cacheHit ? "✓ HIT" : "✗ MISS"}
+                </span>
               </span>
             )}
           </div>
 
           {/* Results */}
-          <div className="mt-8 grid gap-4">
+          <div className="mt-12 grid gap-6 max-w-5xl mx-auto">
             {loading ? (
-              <div className="glass-panel p-8 rounded-xl">
-                <div className="h-4 w-32 animate-pulse rounded" style={{ background: 'var(--bg-input)' }} />
-                <div className="mt-4 h-3 w-full animate-pulse rounded" style={{ background: 'var(--bg-input)' }} />
-                <div className="mt-2 h-3 w-5/6 animate-pulse rounded" style={{ background: 'var(--bg-input)' }} />
+              <div className="glass-panel p-10 rounded-2xl">
+                <div className="h-6 w-48 animate-pulse rounded-lg mb-6" style={{ background: 'var(--bg-input)' }} />
+                <div className="h-4 w-full animate-pulse rounded-lg mb-3" style={{ background: 'var(--bg-input)' }} />
+                <div className="h-4 w-5/6 animate-pulse rounded-lg" style={{ background: 'var(--bg-input)' }} />
               </div>
             ) : results.length === 0 ? (
-              <div className="glass-panel p-10 rounded-xl text-center">
-                <div className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+              <div className="glass-panel p-16 rounded-2xl text-center">
+                <div 
+                  className="text-6xl mb-6"
+                  style={{ 
+                    filter: isDark ? 'drop-shadow(0 0 20px rgba(57, 255, 20, 0.5))' : 'none'
+                  }}
+                >
+                  🔍
+                </div>
+                <div className="text-2xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
                   No results yet
                 </div>
-                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <div className="text-lg" style={{ color: 'var(--text-secondary)' }}>
                   Crawl some pages, then search by basin distance
                 </div>
               </div>
@@ -185,32 +236,39 @@ export function App() {
                   href={r.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="glass-panel group block p-6 rounded-xl transition"
+                  className="glass-panel group block p-8 rounded-2xl transition-all duration-200 hover:scale-[1.02] hover:-translate-y-1"
                   style={{
                     borderColor: 'var(--border-color)',
                   }}
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start justify-between gap-6">
                     <div className="min-w-0 flex-1">
-                      <div className="text-lg font-bold group-hover:underline" style={{ color: 'var(--text-heading)' }}>
+                      <div 
+                        className="text-xl font-bold mb-2 group-hover:underline" 
+                        style={{ 
+                          color: 'var(--text-heading)',
+                          textShadow: isDark ? '0 0 10px rgba(0, 191, 255, 0.3)' : 'none'
+                        }}
+                      >
                         {r.title || "(untitled)"}
                       </div>
-                      <div className="mt-1 truncate text-xs" style={{ color: 'var(--text-secondary)' }}>
-                        {r.url}
+                      <div className="truncate text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+                        🔗 {r.url}
                       </div>
                     </div>
                     <div
-                      className="shrink-0 rounded-full px-3 py-1 text-xs font-mono"
+                      className="shrink-0 rounded-xl px-4 py-2 text-sm font-mono font-bold"
                       style={{
                         background: 'var(--bg-input)',
                         color: 'var(--accent-primary)',
-                        border: '1px solid var(--border-color)',
+                        border: '2px solid var(--border-color)',
+                        boxShadow: isDark ? '0 0 10px rgba(0, 191, 255, 0.3)' : 'none'
                       }}
                     >
                       d={Number(r.distance).toFixed(4)}
                     </div>
                   </div>
-                  <div className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+                  <div className="text-base leading-relaxed" style={{ color: 'var(--text-primary)' }}>
                     {r.snippet}
                   </div>
                 </a>
@@ -220,10 +278,19 @@ export function App() {
         </main>
 
         {/* Footer */}
-        <footer className="mt-16 pt-8 border-t text-center text-sm" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>
-          <p>
-            Powered by basin coordinate geometry • Built with{" "}
-            <span style={{ color: 'var(--accent-secondary)' }}>♥</span> for local-first search
+        <footer className="mt-24 pt-12 border-t text-center" style={{ borderColor: 'var(--border-color)' }}>
+          <p className="text-base mb-4" style={{ color: 'var(--text-secondary)' }}>
+            Powered by{" "}
+            <span className="font-semibold" style={{ color: 'var(--accent-primary)' }}>
+              basin coordinate geometry
+            </span>
+            {" • "}
+            Built with{" "}
+            <span style={{ color: 'var(--accent-secondary)' }}>♥</span>
+            {" "}for local-first search
+          </p>
+          <p className="text-sm" style={{ color: 'var(--text-disabled)' }}>
+            © 2025 qsearch • Privacy-focused • No tracking
           </p>
         </footer>
       </div>
