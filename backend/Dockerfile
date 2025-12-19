@@ -12,14 +12,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install uv
 RUN pip install --no-cache-dir uv
 
-# Copy dependency files
+# Copy all project files (needed for uv sync to build the package)
 COPY pyproject.toml uv.lock ./
-
-# Install dependencies
-RUN uv sync --frozen --no-dev
-
-# Copy application code
 COPY src/ ./src/
+
+# Create minimal README for setuptools
+RUN echo "# qsearch" > README.md
+
+# Install dependencies and build package
+RUN uv sync --frozen --no-dev
 
 # Expose port
 EXPOSE 8000
