@@ -22,7 +22,8 @@
         { "src": "postcss.config.js", "dest": "postcss.config.js" },
         { "src": "index.html", "dest": "index.html" },
         { "src": "src", "dest": "src" },
-        { "cmd": "corepack enable && yarn install --immutable" }
+        { "cmd": "corepack enable" },
+        { "cmd": "yarn install --immutable" }
       ]
     },
     "build": {
