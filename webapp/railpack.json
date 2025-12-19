@@ -13,6 +13,13 @@
     "install": {
       "inputs": [{ "step": "clean" }],
       "commands": [
+        { "src": "package.json", "dest": "package.json" },
+        { "src": "vite.config.ts", "dest": "vite.config.ts" },
+        { "src": "tsconfig.json", "dest": "tsconfig.json" },
+        { "src": "tailwind.config.ts", "dest": "tailwind.config.ts" },
+        { "src": "postcss.config.js", "dest": "postcss.config.js" },
+        { "src": "index.html", "dest": "index.html" },
+        { "src": "src", "dest": "src" },
         { "cmd": "npm install" }
       ]
     },
