@@ -21,10 +21,16 @@ WORKDIR /app
 
 RUN corepack enable
 
+# Accept build arguments for Vite environment variables
+ARG VITE_QSEARCH_API_BASE
+
+# Set as environment variable for the build
+ENV VITE_QSEARCH_API_BASE=$VITE_QSEARCH_API_BASE
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build the app
+# Build the app (now with the environment variable available)
 RUN yarn build
 
 # Production stage
