@@ -1,0 +1,272 @@
+/* 
+ * QSearch Cyberpunk Deep Blue Neon Theme
+ * Based on user's brand theme with glassmorphism effects
+ */
+
+/* Base Variables - Shared across themes */
+:root {
+  /* Core Colors - Electric Blue, Neon Green, Neon Yellow as accents */
+  --color-primary: #00BFFF; /* Electric Blue - Main action color */
+  --color-primary-shade-50: #1C3F5D; /* Darker blue for backgrounds */
+  --color-primary-shade-100: #102B40; /* Deepest blue for dark elements */
+
+  --color-secondary: #39FF14; /* Neon Green - Highlights, success */
+  --color-secondary-shade-50: #EEFF00; /* Neon Yellow - Warnings, accents */
+
+  --color-white: #D3E2F4; /* Off-white for text in dark mode */
+  --color-light: #89CFF0; /* Light blue for subtle elements */
+  --color-light-shade-50: #142C44; /* Medium dark blue */
+  --color-light-shade-100: #0A1B2A; /* Deepest dark blue for backgrounds */
+
+  --color-medium: #1C3F5D; /* Mid-tone blue for borders */
+  --color-dark: #0A1B2A; /* Darkest for text/backgrounds in light mode */
+  --color-disabled: #777980; /* Gray for disabled states */
+  --color-typing: #404040; /* Dark gray for placeholders */
+
+  /* Fonts - Futuristic and professional */
+  --font-family: 'Inter', 'Space Grotesk', 'Sora', 'Montserrat', 'DM Sans', 'Poppins', 'Segoe UI', Arial, sans-serif;
+  --font-family-heading: 'Space Grotesk', 'Montserrat', 'Geist', 'DM Sans', 'Poppins', 'Inter', Arial, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+
+  /* Layout and Spacing */
+  --spacing: 1rem; /* Base unit for margins/paddings */
+  --border-radius: 0.7rem; /* Rounded corners for modern feel */
+  --transition-duration: 0.2s; /* Smooth animations */
+
+  /* Shadows and Glows - Theme-specific overrides below */
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.1); /* For light theme */
+  --glow-neon: 0 0 8px rgba(57, 255, 20, 0.3); /* Neon green glow for dark */
+  --glow-neon-yellow: 0 0 8px rgba(238, 255, 0, 0.3); /* Yellow variant */
+
+  /* Glassmorphism - For panels, cards, etc. */
+  --glass-backdrop: blur(10px);
+  --glass-opacity: 0.15; /* Semi-transparent */
+}
+
+/* Dark Theme (Default) - Cyberpunk neon glows */
+.dark,
+:root {
+  /* Backgrounds */
+  --bg-body: var(--color-light-shade-100); /* Deep blue */
+  --bg-panel: rgba(16, 43, 64, var(--glass-opacity)); /* Glassy dark */
+  --bg-header: var(--color-dark);
+  --bg-footer: var(--color-light-shade-50);
+  --bg-input: #12223a;
+  --bg-code: rgba(20, 44, 68, 0.55);
+
+  /* Text Colors */
+  --text-primary: var(--color-white);
+  --text-secondary: var(--color-light);
+  --text-heading: var(--color-primary); /* Electric blue headings */
+  --text-disabled: var(--color-disabled);
+
+  /* Borders and Dividers */
+  --border-color: var(--color-primary-shade-50);
+  --divider-glow: var(--glow-neon); /* Neon on edges */
+
+  /* Accents */
+  --accent-primary: var(--color-primary);
+  --accent-secondary: var(--color-secondary);
+  --accent-hover: var(--color-secondary-shade-50);
+
+  /* Effects */
+  --panel-shadow: 0 4px 32px rgba(57, 255, 20, 0.07), 0 0 32px 2px rgba(238, 255, 0, 0.07); /* Neon glows */
+  --button-shadow: 0 0 10px rgba(238, 255, 0, 0.8), 0 0 4px rgba(57, 255, 20, 0.8);
+  --button-hover-shadow: 0 0 14px 2px rgba(57, 255, 20, 0.8), 0 0 12px rgba(238, 255, 0, 0.8);
+}
+
+/* Light Theme - Subtle shadows for professional depth */
+.light {
+  /* Backgrounds - Inverted for light mode */
+  --bg-body: var(--color-white); /* Off-white */
+  --bg-panel: rgba(211, 226, 244, var(--glass-opacity)); /* Glassy light */
+  --bg-header: var(--color-light);
+  --bg-footer: var(--color-light-shade-50);
+  --bg-input: #e0f0ff; /* Light blue tint */
+  --bg-code: rgba(137, 207, 240, 0.2); /* Subtle light code bg */
+
+  /* Text Colors */
+  --text-primary: var(--color-dark);
+  --text-secondary: var(--color-medium);
+  --text-heading: var(--color-primary); /* Blue for headings */
+  --text-disabled: var(--color-disabled);
+
+  /* Borders and Dividers */
+  --border-color: var(--color-light-shade-50);
+  --divider-glow: var(--shadow-subtle); /* Shadows instead of glows */
+
+  /* Accents - Softer in light mode */
+  --accent-primary: var(--color-primary);
+  --accent-secondary: var(--color-secondary-shade-50); /* Yellow for visibility */
+  --accent-hover: var(--color-secondary);
+
+  /* Effects */
+  --panel-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Subtle shadows */
+  --button-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --button-hover-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Base Styles - Apply to all themes */
+body {
+  background: var(--bg-body);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-heading);
+  color: var(--text-heading);
+  margin-bottom: var(--spacing);
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-shadow: var(--divider-glow); /* Glow/shadow on headings */
+}
+
+h2 {
+  font-size: 2rem;
+}
+
+/* Links */
+a {
+  color: var(--accent-primary);
+  text-decoration: none;
+  transition: color var(--transition-duration);
+}
+
+a:hover {
+  color: var(--accent-secondary);
+  text-shadow: var(--glow-neon); /* Subtle glow on hover in dark */
+}
+
+/* Buttons */
+button, .btn {
+  background: var(--accent-secondary);
+  color: var(--color-dark);
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 0.75rem 1.5rem;
+  font-family: var(--font-family);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-duration), box-shadow var(--transition-duration);
+  box-shadow: var(--button-shadow);
+}
+
+button:hover, .btn:hover {
+  background: var(--accent-hover);
+  box-shadow: var(--button-hover-shadow);
+}
+
+button:disabled, .btn:disabled {
+  background: var(--color-disabled);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Inputs */
+input, textarea, select {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--spacing);
+  font-family: var(--font-family);
+  transition: box-shadow var(--transition-duration);
+  outline: none;
+}
+
+input:focus, textarea:focus, select:focus {
+  box-shadow: 0 0 0 2px var(--accent-secondary), var(--divider-glow);
+}
+
+/* Code and Pre */
+code, pre {
+  font-family: var(--font-family-mono);
+  background: var(--bg-code);
+  color: var(--accent-secondary-shade-50);
+  border-radius: 0.35rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Glassmorphism Panels - For cards, sections, modals */
+.glass-panel {
+  background: var(--bg-panel);
+  backdrop-filter: var(--glass-backdrop);
+  -webkit-backdrop-filter: var(--glass-backdrop); /* Safari support */
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--panel-shadow);
+  padding: var(--spacing);
+}
+
+/* Headers */
+header {
+  background: var(--bg-header);
+  padding: var(--spacing) 2rem;
+  box-shadow: 0 2px 4px var(--divider-glow); /* Subtle divider effect */
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* Footers */
+footer {
+  background: var(--bg-footer);
+  padding: var(--spacing) 2rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border-color);
+}
+
+/* Dividers and Edges - With neon/shadow highlights */
+hr, .divider {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  box-shadow: var(--divider-glow);
+  margin: calc(var(--spacing) * 2) 0;
+}
+
+/* Cyberpunk Accents - Optional classes for edgy elements */
+.neon-glow {
+  text-shadow: 0 0 6px var(--accent-secondary), 0 0 12px var(--accent-secondary);
+}
+
+.neon-border {
+  border: 1px solid var(--accent-primary);
+  box-shadow: 0 0 10px var(--glow-neon);
+}
+
+/* Logo glow effect */
+.logo-glow {
+  filter: drop-shadow(0 0 8px rgba(0, 191, 255, 0.5)) drop-shadow(0 0 16px rgba(57, 255, 20, 0.3));
+}
+
+/* Responsive Adjustments */
+@media (max-width: 800px) {
+  body {
+    font-size: 0.95rem;
+  }
+
+  header, footer {
+    padding: calc(var(--spacing) / 2) 1rem;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

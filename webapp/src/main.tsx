@@ -2,8 +2,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 
 import "./globals.css";
+import "./theme.css";
 
 import { ThemeProvider } from "./contexts/ThemeProvider";
+import { AuthProvider } from "./contexts/AuthContext";
 import { App } from "./ui/App";
 
 // Apply theme before React renders (FOUC prevention)
@@ -25,7 +27,9 @@ import { App } from "./ui/App";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ThemeProvider>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </ThemeProvider>
   </React.StrictMode>
 );
