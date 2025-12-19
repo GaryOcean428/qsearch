@@ -11,7 +11,7 @@ from qsearch.cache import SearchCache
 from qsearch.api.deps import get_cache, get_orchestrator
 from qsearch.search.orchestrator import SearchOrchestrator
 
-router = APIRouter(prefix="/api/v1")
+router = APIRouter()
 _log = logging.getLogger("qsearch.api")
 
 

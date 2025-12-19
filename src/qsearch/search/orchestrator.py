@@ -18,8 +18,13 @@ class SearchResult:
 
 
 class SearchOrchestrator:
-    def __init__(self, store: DocumentStore | None = None):
-        self.store = store or DocumentStore()
+    def __init__(
+        self, store: DocumentStore | None = None, *, db_url: str | None = None
+    ):
+        if store is not None:
+            self.store = store
+        else:
+            self.store = DocumentStore(db_url=db_url)
         self.index = BasinIndex(self.store)
 
     def search(self, query: str, *, limit: int = 10) -> list[SearchResult]:
@@ -27,7 +32,12 @@ class SearchOrchestrator:
         hits = self.index.search(q, limit=limit)
 
         with self.store.session() as s:
-            by_id = {d.doc_id: d for d in s.query(Document).filter(Document.doc_id.in_([h.doc_id for h in hits])).all()}
+            by_id = {
+                d.doc_id: d
+                for d in s.query(Document)
+                .filter(Document.doc_id.in_([h.doc_id for h in hits]))
+                .all()
+            }
 
         out: list[SearchResult] = []
         for h in hits:

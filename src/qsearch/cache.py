@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 from typing import Any
 
 import redis
@@ -14,22 +13,9 @@ def _cache_key(query: str, limit: int) -> str:
 
 
 class SearchCache:
-    def __init__(
-        self, *, redis_url: str | None = None, ttl_seconds: int = 3600
-    ) -> None:
-        if redis_url is None:
-            redis_url = os.environ.get("REDIS_URL")
-        if ttl_seconds == 3600:
-            v = os.environ.get("QSEARCH_CACHE_TTL_SECONDS") or os.environ.get(
-                "CACHE_TTL_SECONDS"
-            )
-            if v:
-                try:
-                    ttl_seconds = max(0, int(v))
-                except ValueError:
-                    pass
+    def __init__(self, *, redis_url: str | None, ttl_seconds: int) -> None:
         self._enabled = bool(redis_url)
-        self._ttl = max(0, ttl_seconds)
+        self._ttl = max(0, int(ttl_seconds))
         self._client = redis.Redis.from_url(redis_url) if redis_url else None
 
     @property

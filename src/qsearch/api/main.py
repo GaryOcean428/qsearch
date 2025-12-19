@@ -5,7 +5,6 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from qsearch.api.deps import get_cache, get_config, get_orchestrator
@@ -35,14 +34,6 @@ class SearchRequest(BaseModel):
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
-
-
-@app.get("/", response_class=HTMLResponse)
-def home() -> str:
-    _INDEX_HTML = (
-        pathlib.Path(__file__).resolve().parents[1] / "web" / "index.html"
-    ).read_text(encoding="utf-8")
-    return _INDEX_HTML
 
 
 @app.post("/search")
@@ -87,3 +78,13 @@ def search(req: SearchRequest):
     )
     cache.set(req.query, req.limit, payload)
     return payload
+
+
+@app.get("/api/health")
+def health_alias() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.post("/api/search")
+def search_alias(req: SearchRequest):
+    return search(req)
