@@ -10,7 +10,14 @@ from .models import Base
 
 
 def _default_db_url() -> str:
-    return os.environ.get("QSEARCH_DB_URL", "sqlite:///data/qsearch.db")
+    url = os.environ.get("DATABASE_URL") or os.environ.get("QSEARCH_DB_URL")
+    if not url:
+        return "sqlite:///data/qsearch.db"
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+psycopg2://", 1)
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return url
 
 
 class DocumentStore:
