@@ -7,17 +7,20 @@
   "steps": {
     "install": {
       "commands": [
-        { "cmd": "npm install --omit=dev" }
+        { "src": ".", "dest": "." },
+        "npm install"
       ]
     },
     "build": {
+      "inputs": [{ "step": "install" }],
       "commands": [
         { "cmd": "npm run build" }
       ]
     }
   },
   "deploy": {
-    "startCommand": "npm run preview -- --host 0.0.0.0 --port $PORT",
+    "inputs": [{ "step": "build" }],
+    "startCommand": "caddy file-server --root dist --listen :$PORT",
     "variables": {
       "NODE_ENV": "production",
       "VITE_QSEARCH_API_BASE": ""
