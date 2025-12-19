@@ -35,7 +35,6 @@
   },
   "deploy": {
     "inputs": [{ "step": "build" }],
-    "startCommand": "yarn start",
     "variables": {
       "NODE_ENV": "production",
       "VITE_QSEARCH_API_BASE": ""
