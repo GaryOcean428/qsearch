@@ -7,15 +7,20 @@ from bs4 import BeautifulSoup
 from scrapy.linkextractors import LinkExtractor
 
 from qsearch.core.encoding import encode_text_to_basin
+from qsearch.core.geometry import measure_phi_from_basin
 from qsearch.crawler.items import DocumentItem
 
 
 class GeometricSpider(scrapy.Spider):
     name = "geometric"
 
-    def __init__(self, start_urls: str | None = None, max_depth: int = 2, *args, **kwargs):
+    def __init__(
+        self, start_urls: str | None = None, max_depth: int = 2, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
-        self.start_urls = [u.strip() for u in (start_urls or "").split(",") if u.strip()]
+        self.start_urls = [
+            u.strip() for u in (start_urls or "").split(",") if u.strip()
+        ]
         self.max_depth = int(max_depth)
         self.link_extractor = LinkExtractor()
 
@@ -27,6 +32,7 @@ class GeometricSpider(scrapy.Spider):
         text = soup.get_text(separator=" ", strip=True)
 
         basin = encode_text_to_basin(text)
+        phi = measure_phi_from_basin(basin)
 
         doc_id = hashlib.sha256(response.url.encode("utf-8")).hexdigest()[:16]
         yield DocumentItem(
@@ -35,11 +41,13 @@ class GeometricSpider(scrapy.Spider):
             title=title,
             text=text[:5000],
             basin=basin.tolist(),
-            phi=0.0,
+            phi=phi,
         )
 
         if depth >= self.max_depth:
             return
 
         for link in self.link_extractor.extract_links(response):
-            yield response.follow(link, callback=self.parse, cb_kwargs={"depth": depth + 1})
+            yield response.follow(
+                link, callback=self.parse, cb_kwargs={"depth": depth + 1}
+            )
