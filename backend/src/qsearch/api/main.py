@@ -71,8 +71,7 @@ app.add_middleware(
 )
 
 app.include_router(v1_router, prefix="/api/v1")
-if _cfg.session_secret:
-    app.include_router(auth_router)
+app.include_router(auth_router)  # DB-based auth, always enabled
 app.include_router(v1_router)
 app.include_router(federation_router)
 app.include_router(external_router)

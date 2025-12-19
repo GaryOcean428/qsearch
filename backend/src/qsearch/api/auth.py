@@ -1,163 +1,331 @@
+"""
+Simple DB-based authentication (no OAuth).
+Users register with email/password, login to get a session.
+"""
+
 from __future__ import annotations
 
+import hashlib
+import secrets
 import uuid
+import logging
+from datetime import datetime
 from typing import Any
-from typing import Annotated
 
-from authlib.integrations.starlette_client import OAuth
-from fastapi import APIRouter, Depends, HTTPException, Request
-from starlette.responses import RedirectResponse
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, EmailStr
+from sqlalchemy import text
 
-from qsearch.api.deps import get_config, get_orchestrator
-from qsearch.config import QSearchConfig
-from qsearch.index.models import User
+from qsearch.api.deps import get_config
+from qsearch.store.document_store import get_session
 
 router = APIRouter(prefix="/api/v1/auth")
+_log = logging.getLogger("qsearch.auth")
 
 
-def _oauth(cfg: QSearchConfig) -> OAuth:
-    oauth = OAuth()
+# === Database Setup ===
 
-    if cfg.google_client_id and cfg.google_client_secret:
-        oauth.register(
-            name="google",
-            client_id=cfg.google_client_id,
-            client_secret=cfg.google_client_secret,
-            server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
-            client_kwargs={"scope": "openid email profile"},
-        )
+USERS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(64) NOT NULL UNIQUE,
+    email VARCHAR(256) NOT NULL UNIQUE,
+    password_hash VARCHAR(128) NOT NULL,
+    name VARCHAR(128),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_login_at TIMESTAMP
+);
 
-    if cfg.microsoft_client_id and cfg.microsoft_client_secret:
-        oauth.register(
-            name="microsoft",
-            client_id=cfg.microsoft_client_id,
-            client_secret=cfg.microsoft_client_secret,
-            server_metadata_url="https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration",
-            client_kwargs={"scope": "openid email profile"},
-        )
+CREATE TABLE IF NOT EXISTS saved_searches (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(64) NOT NULL REFERENCES users(user_id),
+    query TEXT NOT NULL,
+    results_count INTEGER,
+    search_mode VARCHAR(32),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
 
-    return oauth
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_saved_searches_user ON saved_searches(user_id);
+"""
+
+
+def ensure_users_table(session):
+    try:
+        session.execute(text(USERS_TABLE_SQL))
+        session.commit()
+    except Exception as e:
+        _log.warning("Could not create users table: %s", e)
+        session.rollback()
+
+
+def hash_password(password: str, salt: str = "") -> str:
+    """Simple password hashing with SHA-256."""
+    return hashlib.sha256((password + salt).encode()).hexdigest()
+
+
+# === Models ===
+
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+    name: str | None = None
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class SaveSearchRequest(BaseModel):
+    query: str
+    results_count: int = 0
+    search_mode: str = "hybrid"
+
+
+# === Routes ===
 
 
 @router.get("/providers")
-def providers(cfg: Annotated[QSearchConfig, Depends(get_config)]) -> dict[str, Any]:
+def providers() -> dict[str, Any]:
+    """Return available auth providers (just local DB auth)."""
     return {
-        "enabled": cfg.auth_enabled,
+        "enabled": True,
         "providers": {
-            "google": bool(cfg.google_client_id and cfg.google_client_secret),
-            "microsoft": bool(cfg.microsoft_client_id and cfg.microsoft_client_secret),
+            "local": True,
+            "google": False,
+            "microsoft": False,
         },
     }
 
 
-@router.get("/{provider}/login")
-async def login(
-    provider: str,
-    request: Request,
-    cfg: Annotated[QSearchConfig, Depends(get_config)],
-):
-    if not cfg.auth_enabled:
-        raise HTTPException(status_code=503, detail="auth_disabled")
-    if not cfg.public_base_url:
-        raise HTTPException(status_code=500, detail="missing_public_base_url")
+@router.post("/register")
+def register(req: RegisterRequest, request: Request):
+    """Register a new user with email/password."""
+    if len(req.password) < 6:
+        raise HTTPException(400, "Password must be at least 6 characters")
 
-    oauth = _oauth(cfg)
-    if provider not in oauth._registry:
-        raise HTTPException(status_code=404, detail="unknown_provider")
+    cfg = get_config()
+    with get_session(cfg.db_url) as session:
+        ensure_users_table(session)
 
-    redirect_uri = f"{cfg.public_base_url}/api/v1/auth/{provider}/callback"
-    return await oauth.create_client(provider).authorize_redirect(request, redirect_uri)
-
-
-@router.get("/{provider}/callback")
-async def callback(
-    provider: str,
-    request: Request,
-    cfg: Annotated[QSearchConfig, Depends(get_config)],
-):
-    if not cfg.auth_enabled:
-        raise HTTPException(status_code=503, detail="auth_disabled")
-
-    oauth = _oauth(cfg)
-    if provider not in oauth._registry:
-        raise HTTPException(status_code=404, detail="unknown_provider")
-
-    client = oauth.create_client(provider)
-    token = await client.authorize_access_token(request)
-    userinfo = await client.userinfo(token=token)
-
-    provider_user_id = str(userinfo.get("sub") or "")
-    email = str(userinfo.get("email") or "")
-    name = str(userinfo.get("name") or "")
-    avatar_url = str(userinfo.get("picture") or "")
-
-    if not provider_user_id:
-        raise HTTPException(status_code=400, detail="missing_provider_user_id")
-
-    # Persist user
-    orch = get_orchestrator()
-    with orch.store.session() as s:
-        existing = (
-            s.query(User)
-            .filter(User.provider == provider)
-            .filter(User.provider_user_id == provider_user_id)
-            .one_or_none()
+        # Check if email exists
+        result = session.execute(
+            text("SELECT id FROM users WHERE email = :email"), {"email": req.email}
         )
+        if result.fetchone():
+            raise HTTPException(400, "Email already registered")
 
-        if existing is None:
-            u = User(
-                user_id=str(uuid.uuid4()),
-                provider=provider,
-                provider_user_id=provider_user_id,
-                email=email,
-                name=name,
-                avatar_url=avatar_url,
-            )
-            s.add(u)
-            user_id = u.user_id
-        else:
-            existing.email = email
-            existing.name = name
-            existing.avatar_url = avatar_url
-            user_id = existing.user_id
+        user_id = str(uuid.uuid4())
+        password_hash = hash_password(req.password, user_id)
 
-    # Session
-    request.session["user_id"] = user_id
-    request.session["provider"] = provider
+        session.execute(
+            text(
+                """
+            INSERT INTO users (user_id, email, password_hash, name, created_at)
+            VALUES (:user_id, :email, :password_hash, :name, NOW())
+        """
+            ),
+            {
+                "user_id": user_id,
+                "email": req.email,
+                "password_hash": password_hash,
+                "name": req.name or req.email.split("@")[0],
+            },
+        )
+        session.commit()
 
-    # Redirect back to webapp (or API base if you want to keep it simple)
-    return RedirectResponse(url=cfg.public_base_url)
+        # Set session
+        request.session["user_id"] = user_id
+
+        return {
+            "ok": True,
+            "message": "Registration successful",
+            "user": {
+                "user_id": user_id,
+                "email": req.email,
+                "name": req.name or req.email.split("@")[0],
+            },
+        }
+
+
+@router.post("/login")
+def login(req: LoginRequest, request: Request):
+    """Login with email/password."""
+    cfg = get_config()
+    with get_session(cfg.db_url) as session:
+        ensure_users_table(session)
+
+        result = session.execute(
+            text(
+                "SELECT user_id, email, password_hash, name FROM users WHERE email = :email"
+            ),
+            {"email": req.email},
+        )
+        row = result.mappings().fetchone()
+
+        if not row:
+            raise HTTPException(401, "Invalid email or password")
+
+        expected_hash = hash_password(req.password, row["user_id"])
+        if row["password_hash"] != expected_hash:
+            raise HTTPException(401, "Invalid email or password")
+
+        # Update last login
+        session.execute(
+            text("UPDATE users SET last_login_at = NOW() WHERE user_id = :user_id"),
+            {"user_id": row["user_id"]},
+        )
+        session.commit()
+
+        # Set session
+        request.session["user_id"] = row["user_id"]
+
+        return {
+            "ok": True,
+            "message": "Login successful",
+            "user": {
+                "user_id": row["user_id"],
+                "email": row["email"],
+                "name": row["name"],
+            },
+        }
 
 
 @router.post("/logout")
 def logout(request: Request):
+    """Clear session."""
     request.session.clear()
     return {"ok": True}
 
 
 @router.get("/me")
-def me(request: Request, cfg: Annotated[QSearchConfig, Depends(get_config)]):
-    if not cfg.auth_enabled:
-        raise HTTPException(status_code=503, detail="auth_disabled")
-
+def me(request: Request):
+    """Get current authenticated user."""
     user_id = request.session.get("user_id")
     if not user_id:
         return {"authenticated": False}
 
-    orch = get_orchestrator()
-    with orch.store.session() as s:
-        u = s.get(User, user_id)
-        if u is None:
+    cfg = get_config()
+    with get_session(cfg.db_url) as session:
+        ensure_users_table(session)
+
+        result = session.execute(
+            text(
+                "SELECT user_id, email, name, created_at FROM users WHERE user_id = :user_id"
+            ),
+            {"user_id": user_id},
+        )
+        row = result.mappings().fetchone()
+
+        if not row:
             request.session.clear()
             return {"authenticated": False}
 
         return {
             "authenticated": True,
             "user": {
-                "user_id": u.user_id,
-                "provider": u.provider,
-                "email": u.email,
-                "name": u.name,
-                "avatar_url": u.avatar_url,
+                "user_id": row["user_id"],
+                "email": row["email"],
+                "name": row["name"],
+                "created_at": (
+                    row["created_at"].isoformat() if row["created_at"] else None
+                ),
             },
         }
+
+
+# === Saved Searches ===
+
+
+@router.post("/searches/save")
+def save_search(req: SaveSearchRequest, request: Request):
+    """Save a search for the authenticated user."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(401, "Not authenticated")
+
+    cfg = get_config()
+    with get_session(cfg.db_url) as session:
+        ensure_users_table(session)
+
+        session.execute(
+            text(
+                """
+            INSERT INTO saved_searches (user_id, query, results_count, search_mode, created_at)
+            VALUES (:user_id, :query, :results_count, :search_mode, NOW())
+        """
+            ),
+            {
+                "user_id": user_id,
+                "query": req.query,
+                "results_count": req.results_count,
+                "search_mode": req.search_mode,
+            },
+        )
+        session.commit()
+
+        return {"ok": True, "message": "Search saved"}
+
+
+@router.get("/searches")
+def list_searches(request: Request):
+    """List saved searches for the authenticated user."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(401, "Not authenticated")
+
+    cfg = get_config()
+    with get_session(cfg.db_url) as session:
+        ensure_users_table(session)
+
+        result = session.execute(
+            text(
+                """
+            SELECT id, query, results_count, search_mode, created_at
+            FROM saved_searches
+            WHERE user_id = :user_id
+            ORDER BY created_at DESC
+            LIMIT 50
+        """
+            ),
+            {"user_id": user_id},
+        )
+
+        searches = [
+            {
+                "id": row["id"],
+                "query": row["query"],
+                "results_count": row["results_count"],
+                "search_mode": row["search_mode"],
+                "created_at": (
+                    row["created_at"].isoformat() if row["created_at"] else None
+                ),
+            }
+            for row in result.mappings()
+        ]
+
+        return {"searches": searches}
+
+
+@router.delete("/searches/{search_id}")
+def delete_search(search_id: int, request: Request):
+    """Delete a saved search."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(401, "Not authenticated")
+
+    cfg = get_config()
+    with get_session(cfg.db_url) as session:
+        session.execute(
+            text(
+                """
+            DELETE FROM saved_searches WHERE id = :search_id AND user_id = :user_id
+        """
+            ),
+            {"search_id": search_id, "user_id": user_id},
+        )
+        session.commit()
+
+        return {"ok": True}

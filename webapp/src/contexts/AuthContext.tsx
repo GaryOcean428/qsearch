@@ -2,24 +2,18 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 
 export interface User {
   user_id: string;
-  provider: string;
   email: string;
   name: string;
-  avatar_url: string;
-}
-
-export interface AuthProviders {
-  google: boolean;
-  microsoft: boolean;
+  created_at?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   authenticated: boolean;
-  providers: AuthProviders;
   authEnabled: boolean;
-  login: (provider: string) => void;
+  register: (email: string, password: string, name?: string) => Promise<{ ok: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -41,39 +35,22 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [providers, setProviders] = useState<AuthProviders>({ google: false, microsoft: false });
-  const [authEnabled, setAuthEnabled] = useState(false);
+  const [authEnabled, setAuthEnabled] = useState(true);
 
-  // Get API base URL from environment
   const apiBase = import.meta.env.VITE_QSEARCH_API_BASE || '';
 
-  // Check authentication status and available providers
   const refreshUser = async () => {
     try {
-      // Check which providers are enabled
-      const providersRes = await fetch(`${apiBase}/api/v1/auth/providers`, {
+      const meRes = await fetch(`${apiBase}/api/v1/auth/me`, {
         credentials: 'include',
       });
-      
-      if (providersRes.ok) {
-        const providersData = await providersRes.json();
-        setAuthEnabled(providersData.enabled || false);
-        setProviders(providersData.providers || { google: false, microsoft: false });
-      }
 
-      // Check if user is authenticated
-      if (authEnabled) {
-        const meRes = await fetch(`${apiBase}/api/v1/auth/me`, {
-          credentials: 'include',
-        });
-
-        if (meRes.ok) {
-          const data = await meRes.json();
-          if (data.authenticated && data.user) {
-            setUser(data.user);
-          } else {
-            setUser(null);
-          }
+      if (meRes.ok) {
+        const data = await meRes.json();
+        if (data.authenticated && data.user) {
+          setUser(data.user);
+        } else {
+          setUser(null);
         }
       }
     } catch (error) {
@@ -84,17 +61,48 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  // Initialize auth state on mount
   useEffect(() => {
     refreshUser();
   }, []);
 
-  // Login by redirecting to OAuth provider
-  const login = (provider: string) => {
-    window.location.href = `${apiBase}/api/v1/auth/${provider}/login`;
+  const register = async (email: string, password: string, name?: string) => {
+    try {
+      const res = await fetch(`${apiBase}/api/v1/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password, name }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setUser(data.user);
+        return { ok: true };
+      }
+      return { ok: false, error: data.detail || 'Registration failed' };
+    } catch (error) {
+      return { ok: false, error: 'Network error' };
+    }
   };
 
-  // Logout
+  const login = async (email: string, password: string) => {
+    try {
+      const res = await fetch(`${apiBase}/api/v1/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setUser(data.user);
+        return { ok: true };
+      }
+      return { ok: false, error: data.detail || 'Login failed' };
+    } catch (error) {
+      return { ok: false, error: 'Network error' };
+    }
+  };
+
   const logout = async () => {
     try {
       await fetch(`${apiBase}/api/v1/auth/logout`, {
@@ -111,8 +119,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     loading,
     authenticated: !!user,
-    providers,
     authEnabled,
+    register,
     login,
     logout,
     refreshUser,
