@@ -1,6 +1,9 @@
 {
   "$schema": "https://schema.railpack.com",
   "provider": "node",
+  "packages": {
+    "node": "20"
+  },
   "steps": {
     "build": {
       "commands": [
@@ -10,7 +13,7 @@
     }
   },
   "deploy": {
-    "startCommand": "npm run preview",
+    "startCommand": "npm run preview -- --host 0.0.0.0 --port $PORT",
     "variables": {
       "NODE_ENV": "production",
       "VITE_QSEARCH_API_BASE": ""
