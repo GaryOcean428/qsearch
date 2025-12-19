@@ -35,7 +35,7 @@
   },
   "deploy": {
     "inputs": [{ "step": "build" }],
-    "staticSite": true,
+    "startCommand": "npx serve dist -l ${PORT:-3000}",
     "variables": {
       "NODE_ENV": "production",
       "VITE_QSEARCH_API_BASE": ""
