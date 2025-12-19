@@ -1,0 +1,16 @@
+numpy>=1.24
+scipy>=1.10
+scrapy>=2.11
+sqlalchemy>=2.0
+psycopg2-binary>=2.9
+httpx>=0.27
+mcp>=1.0.0
+fastapi>=0.100
+uvicorn>=0.23
+pydantic>=2.5
+beautifulsoup4>=4.12
+lxml>=4.9
+redis>=5.0
+authlib>=1.3
+itsdangerous>=2.2
+qigkernels>=0.1.0
