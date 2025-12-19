@@ -7,32 +7,34 @@
   "steps": {
     "clean": {
       "commands": [
-        { "cmd": "rm -rf node_modules dist .vite .cache .turbo" }
+        { "cmd": "rm -rf node_modules dist .vite .cache .turbo .yarn" }
       ]
     },
     "install": {
       "inputs": [{ "step": "clean" }],
       "commands": [
         { "src": "package.json", "dest": "package.json" },
+        { "src": "yarn.lock", "dest": "yarn.lock" },
+        { "src": ".yarnrc.yml", "dest": ".yarnrc.yml" },
         { "src": "vite.config.ts", "dest": "vite.config.ts" },
         { "src": "tsconfig.json", "dest": "tsconfig.json" },
         { "src": "tailwind.config.ts", "dest": "tailwind.config.ts" },
         { "src": "postcss.config.js", "dest": "postcss.config.js" },
         { "src": "index.html", "dest": "index.html" },
         { "src": "src", "dest": "src" },
-        { "cmd": "npm install" }
+        { "cmd": "corepack enable && yarn install --immutable" }
       ]
     },
     "build": {
       "inputs": [{ "step": "install" }],
       "commands": [
-        { "cmd": "npm run build" }
+        { "cmd": "yarn build" }
       ]
     }
   },
   "deploy": {
     "inputs": [{ "step": "build" }],
-    "startCommand": "npm run preview -- --host 0.0.0.0 --port $PORT",
+    "startCommand": "yarn preview --host 0.0.0.0 --port $PORT",
     "variables": {
       "NODE_ENV": "production",
       "VITE_QSEARCH_API_BASE": ""
