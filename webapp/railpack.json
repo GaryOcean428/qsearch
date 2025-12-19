@@ -5,7 +5,13 @@
     "node": "20"
   },
   "steps": {
+    "clean": {
+      "commands": [
+        { "cmd": "rm -rf node_modules dist .vite .cache .turbo" }
+      ]
+    },
     "install": {
+      "inputs": [{ "step": "clean" }],
       "commands": [
         { "src": ".", "dest": "." },
         "npm install"
