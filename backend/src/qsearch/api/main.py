@@ -54,14 +54,21 @@ app = FastAPI(title="qsearch", version="0.2.0", lifespan=lifespan)
 _cfg = get_config()
 if _cfg.session_secret:
     app.add_middleware(SessionMiddleware, secret_key=_cfg.session_secret)
-if _cfg.cors_allow_origins:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=_cfg.cors_allow_origins,
-        allow_credentials=False,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+
+# CORS configuration - allow credentials for auth
+_cors_origins = _cfg.cors_allow_origins or [
+    "https://qsearch-web-production.up.railway.app",
+    "https://qsearch-web.up.railway.app",
+    "http://localhost:3000",
+    "http://localhost:5173",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(v1_router, prefix="/api/v1")
 if _cfg.session_secret:
