@@ -101,6 +101,19 @@ export function App() {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Federation Link */}
+            <a
+              href="#/federation"
+              className="px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105"
+              style={{
+                color: 'var(--text-primary)',
+                background: 'var(--bg-panel)',
+                border: '1px solid var(--border-color)',
+              }}
+            >
+              🌐 Federation
+            </a>
+
             {/* Theme Selector */}
             <select
               className="glass-panel px-4 py-2.5 text-sm font-medium rounded-lg outline-none transition-all duration-200 cursor-pointer hover:scale-105"

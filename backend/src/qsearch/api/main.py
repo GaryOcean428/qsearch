@@ -14,6 +14,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from qsearch.api.deps import get_cache, get_config, get_orchestrator
 from qsearch.api.auth import router as auth_router
 from qsearch.api.routes_v1 import router as v1_router
+from qsearch.api.federation import router as federation_router, external_router
 from qsearch.search.hybrid import HybridSearchOrchestrator
 from qsearch.search.learner import get_learner
 
@@ -65,6 +66,9 @@ if _cfg.cors_allow_origins:
 app.include_router(v1_router, prefix="/api/v1")
 if _cfg.session_secret:
     app.include_router(auth_router)
+app.include_router(v1_router)
+app.include_router(federation_router)
+app.include_router(external_router)
 
 
 class SearchRequest(BaseModel):
