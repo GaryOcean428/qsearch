@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qsearch"
+version = "0.1.0"
+description = "Local-first QIG-inspired crawler + search engine (Scrapy + geometric ranking)."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.24",
+  "scipy>=1.10",
+  "scrapy>=2.11",
+  "sqlalchemy>=2.0",
+  "fastapi>=0.100",
+  "uvicorn>=0.23",
+  "pydantic>=2.5",
+  "beautifulsoup4>=4.12",
+  "lxml>=4.9",
+  "qigkernels>=0.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4",
+  "ruff>=0.4",
+]
+
+[tool.setuptools]
+packages = ["qsearch"]
+package-dir = {"qsearch" = "src/qsearch"}
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
