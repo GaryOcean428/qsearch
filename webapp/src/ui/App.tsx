@@ -1,21 +1,15 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { useTheme } from "../contexts/ThemeProvider";
 import { useAuth } from "../contexts/AuthContext";
-import { qsearchSearch } from "../utils/api";
+import { qsearchSearch, qsearchHybrid, getLearnerStats, type SearchResult, type LearnerStats } from "../utils/api";
 import { LoginModal } from "./LoginModal";
 import { UserMenu } from "./UserMenu";
 
 import logoDark from "../assets/qsearch_logo_with_text_dark.png";
 import logoLight from "../assets/qsearch_logo_with_text_light.png";
 
-type SearchHit = {
-  doc_id: string;
-  url: string;
-  title: string;
-  snippet: string;
-  distance: number;
-};
+type SearchMode = "local" | "hybrid";
 
 export function App() {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -25,12 +19,32 @@ export function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cacheHit, setCacheHit] = useState<boolean | null>(null);
-  const [results, setResults] = useState<SearchHit[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  
+  // Hybrid search state
+  const [searchMode, setSearchMode] = useState<SearchMode>("hybrid");
+  const [alpha, setAlpha] = useState(0.5);
+  const [learnerStats, setLearnerStats] = useState<LearnerStats | null>(null);
+  const [currentMode, setCurrentMode] = useState<SearchMode | null>(null);
 
   const isDark = resolvedTheme === "dark";
-  // FIXED: Dark logo (with neon) for dark theme, light logo for light theme
   const currentLogo = isDark ? logoLight : logoDark;
+
+  // Fetch learner stats periodically
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const stats = await getLearnerStats();
+        setLearnerStats(stats);
+      } catch (e) {
+        // Ignore errors
+      }
+    };
+    fetchStats();
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   async function onSearch(e?: React.FormEvent) {
     e?.preventDefault();
@@ -38,10 +52,18 @@ export function App() {
     setLoading(true);
     setResults([]);
     setCacheHit(null);
+    setCurrentMode(null);
     try {
-      const res = await qsearchSearch(query, limit);
-      setResults(res.results || []);
-      setCacheHit(Boolean(res.cache_hit));
+      if (searchMode === "hybrid") {
+        const res = await qsearchHybrid(query, limit, alpha, true);
+        setResults(res.results || []);
+        setCurrentMode("hybrid");
+      } else {
+        const res = await qsearchSearch(query, limit);
+        setResults(res.results || []);
+        setCacheHit(Boolean(res.cache_hit));
+        setCurrentMode("local");
+      }
     } catch (err: any) {
       setError(err?.message ?? String(err));
     } finally {
@@ -129,19 +151,95 @@ export function App() {
             Geometric Search Engine
           </h1>
           <p 
-            className="text-lg md:text-xl max-w-3xl mx-auto leading-relaxed"
+            className="text-lg md:text-xl max-w-3xl mx-auto leading-relaxed mb-8"
             style={{ color: 'var(--text-secondary)' }}
           >
             <span className="font-semibold" style={{ color: 'var(--accent-primary)' }}>
               Basin coordinate geometry
             </span>
             {" • "}
-            Local-first search with no external APIs
+            {searchMode === "hybrid" ? "Web search + geometric re-ranking" : "Local-first search"}
             {" • "}
             <span className="font-semibold" style={{ color: 'var(--accent-secondary)' }}>
-              Privacy-focused
+              Continuous learning
             </span>
           </p>
+
+          {/* Search Mode Toggle */}
+          <div className="flex flex-wrap items-center justify-center gap-4 mb-6">
+            <div 
+              className="glass-panel inline-flex rounded-xl p-1"
+              style={{ background: 'var(--bg-panel)' }}
+            >
+              <button
+                onClick={() => setSearchMode("local")}
+                className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                  searchMode === "local" ? "scale-105" : "opacity-60 hover:opacity-80"
+                }`}
+                style={{
+                  background: searchMode === "local" ? 'var(--accent-primary)' : 'transparent',
+                  color: searchMode === "local" ? 'var(--color-dark)' : 'var(--text-primary)',
+                }}
+              >
+                🗄️ Local Index
+              </button>
+              <button
+                onClick={() => setSearchMode("hybrid")}
+                className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                  searchMode === "hybrid" ? "scale-105" : "opacity-60 hover:opacity-80"
+                }`}
+                style={{
+                  background: searchMode === "hybrid" ? 'var(--accent-secondary)' : 'transparent',
+                  color: searchMode === "hybrid" ? 'var(--color-dark)' : 'var(--text-primary)',
+                }}
+              >
+                🌐 Hybrid Web
+              </button>
+            </div>
+
+            {/* Alpha slider for hybrid mode */}
+            {searchMode === "hybrid" && (
+              <div className="flex items-center gap-3 glass-panel px-4 py-2 rounded-xl" style={{ background: 'var(--bg-panel)' }}>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                  🎯 Geometry
+                </span>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={alpha}
+                  onChange={(e) => setAlpha(parseFloat(e.target.value))}
+                  className="w-24 accent-current"
+                  style={{ accentColor: 'var(--accent-secondary)' }}
+                />
+                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                  🔍 Serper
+                </span>
+                <span className="text-xs font-mono px-2 py-1 rounded" style={{ background: 'var(--bg-input)', color: 'var(--accent-primary)' }}>
+                  α={alpha.toFixed(1)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Learner Stats Badge */}
+          {learnerStats && (
+            <div 
+              className="inline-flex items-center gap-4 px-4 py-2 rounded-full text-sm"
+              style={{ 
+                background: 'var(--bg-panel)', 
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-secondary)'
+              }}
+            >
+              <span className={learnerStats.running ? "animate-pulse" : ""}>
+                {learnerStats.running ? "🟢" : "⚪"} Learner
+              </span>
+              <span>📚 {learnerStats.documents_added} docs</span>
+              <span>📥 {learnerStats.queue_size} queued</span>
+            </div>
+          )}
         </div>
 
         {/* Search Form */}
@@ -193,13 +291,25 @@ export function App() {
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg" style={{ background: 'var(--bg-panel)', color: 'var(--accent-secondary)' }}>
                 ⚠️ {error}
               </span>
-            ) : cacheHit === null ? (
+            ) : currentMode === null ? (
               <span>&nbsp;</span>
+            ) : currentMode === "hybrid" ? (
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg" style={{ background: 'var(--bg-panel)' }}>
+                Mode: <span className="font-bold" style={{ color: 'var(--accent-secondary)' }}>🌐 Hybrid</span>
+                <span className="mx-2">•</span>
+                <span className="font-mono text-xs">α={alpha.toFixed(1)}</span>
+              </span>
             ) : (
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg" style={{ background: 'var(--bg-panel)' }}>
-                Cache: <span className="font-bold" style={{ color: cacheHit ? 'var(--accent-secondary)' : 'var(--accent-primary)' }}>
-                  {cacheHit ? "✓ HIT" : "✗ MISS"}
-                </span>
+                Mode: <span className="font-bold" style={{ color: 'var(--accent-primary)' }}>🗄️ Local</span>
+                {cacheHit !== null && (
+                  <>
+                    <span className="mx-2">•</span>
+                    Cache: <span className="font-bold" style={{ color: cacheHit ? 'var(--accent-secondary)' : 'var(--accent-primary)' }}>
+                      {cacheHit ? "✓ HIT" : "✗ MISS"}
+                    </span>
+                  </>
+                )}
               </span>
             )}
           </div>
@@ -230,9 +340,9 @@ export function App() {
                 </div>
               </div>
             ) : (
-              results.map((r) => (
+              results.map((r, idx) => (
                 <a
-                  key={r.doc_id}
+                  key={r.doc_id || r.url}
                   href={r.url}
                   target="_blank"
                   rel="noreferrer"
@@ -256,16 +366,55 @@ export function App() {
                         🔗 {r.url}
                       </div>
                     </div>
-                    <div
-                      className="shrink-0 rounded-xl px-4 py-2 text-sm font-mono font-bold"
-                      style={{
-                        background: 'var(--bg-input)',
-                        color: 'var(--accent-primary)',
-                        border: '2px solid var(--border-color)',
-                        boxShadow: isDark ? '0 0 10px rgba(0, 191, 255, 0.3)' : 'none'
-                      }}
-                    >
-                      d={Number(r.distance).toFixed(4)}
+                    <div className="shrink-0 flex flex-col gap-2 items-end">
+                      {/* Show different metrics based on search mode */}
+                      {currentMode === "hybrid" ? (
+                        <>
+                          <div
+                            className="rounded-lg px-3 py-1 text-xs font-mono font-bold"
+                            style={{
+                              background: 'var(--bg-input)',
+                              color: 'var(--accent-secondary)',
+                              border: '1px solid var(--border-color)',
+                            }}
+                          >
+                            #{r.serper_position} Serper
+                          </div>
+                          <div
+                            className="rounded-lg px-3 py-1 text-xs font-mono font-bold"
+                            style={{
+                              background: 'var(--bg-input)',
+                              color: 'var(--accent-primary)',
+                              border: '1px solid var(--border-color)',
+                            }}
+                          >
+                            d={Number(r.basin_distance || 0).toFixed(3)}
+                          </div>
+                          <div
+                            className="rounded-lg px-3 py-1 text-xs font-mono font-bold"
+                            style={{
+                              background: isDark ? 'rgba(57, 255, 20, 0.2)' : 'rgba(0, 191, 255, 0.1)',
+                              color: 'var(--text-heading)',
+                              border: '2px solid var(--accent-secondary)',
+                              boxShadow: isDark ? '0 0 8px rgba(57, 255, 20, 0.4)' : 'none'
+                            }}
+                          >
+                            H={Number(r.hybrid_score || 0).toFixed(3)}
+                          </div>
+                        </>
+                      ) : (
+                        <div
+                          className="rounded-xl px-4 py-2 text-sm font-mono font-bold"
+                          style={{
+                            background: 'var(--bg-input)',
+                            color: 'var(--accent-primary)',
+                            border: '2px solid var(--border-color)',
+                            boxShadow: isDark ? '0 0 10px rgba(0, 191, 255, 0.3)' : 'none'
+                          }}
+                        >
+                          d={Number(r.distance || 0).toFixed(4)}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="text-base leading-relaxed" style={{ color: 'var(--text-primary)' }}>
