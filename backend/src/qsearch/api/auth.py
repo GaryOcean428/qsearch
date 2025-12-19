@@ -6,10 +6,8 @@ Users register with email/password, login to get a session.
 from __future__ import annotations
 
 import hashlib
-import secrets
 import uuid
 import logging
-from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
@@ -17,7 +15,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy import text
 
 from qsearch.api.deps import get_config
-from qsearch.store.document_store import get_session
+from qsearch.index.storage import DocumentStore
 
 router = APIRouter(prefix="/api/v1/auth")
 _log = logging.getLogger("qsearch.auth")
@@ -107,7 +105,8 @@ def register(req: RegisterRequest, request: Request):
         raise HTTPException(400, "Password must be at least 6 characters")
 
     cfg = get_config()
-    with get_session(cfg.db_url) as session:
+    store = DocumentStore(cfg.db_url)
+    with store.session() as session:
         ensure_users_table(session)
 
         # Check if email exists
@@ -154,7 +153,8 @@ def register(req: RegisterRequest, request: Request):
 def login(req: LoginRequest, request: Request):
     """Login with email/password."""
     cfg = get_config()
-    with get_session(cfg.db_url) as session:
+    store = DocumentStore(cfg.db_url)
+    with store.session() as session:
         ensure_users_table(session)
 
         result = session.execute(
@@ -177,7 +177,6 @@ def login(req: LoginRequest, request: Request):
             text("UPDATE users SET last_login_at = NOW() WHERE user_id = :user_id"),
             {"user_id": row["user_id"]},
         )
-        session.commit()
 
         # Set session
         request.session["user_id"] = row["user_id"]
@@ -208,7 +207,8 @@ def me(request: Request):
         return {"authenticated": False}
 
     cfg = get_config()
-    with get_session(cfg.db_url) as session:
+    store = DocumentStore(cfg.db_url)
+    with store.session() as session:
         ensure_users_table(session)
 
         result = session.execute(
@@ -247,7 +247,8 @@ def save_search(req: SaveSearchRequest, request: Request):
         raise HTTPException(401, "Not authenticated")
 
     cfg = get_config()
-    with get_session(cfg.db_url) as session:
+    store = DocumentStore(cfg.db_url)
+    with store.session() as session:
         ensure_users_table(session)
 
         session.execute(
@@ -264,7 +265,6 @@ def save_search(req: SaveSearchRequest, request: Request):
                 "search_mode": req.search_mode,
             },
         )
-        session.commit()
 
         return {"ok": True, "message": "Search saved"}
 
@@ -277,7 +277,8 @@ def list_searches(request: Request):
         raise HTTPException(401, "Not authenticated")
 
     cfg = get_config()
-    with get_session(cfg.db_url) as session:
+    store = DocumentStore(cfg.db_url)
+    with store.session() as session:
         ensure_users_table(session)
 
         result = session.execute(
@@ -317,7 +318,8 @@ def delete_search(search_id: int, request: Request):
         raise HTTPException(401, "Not authenticated")
 
     cfg = get_config()
-    with get_session(cfg.db_url) as session:
+    store = DocumentStore(cfg.db_url)
+    with store.session() as session:
         session.execute(
             text(
                 """
@@ -326,6 +328,5 @@ def delete_search(search_id: int, request: Request):
             ),
             {"search_id": search_id, "user_id": user_id},
         )
-        session.commit()
 
         return {"ok": True}
