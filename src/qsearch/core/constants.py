@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from qigkernels.constants import BASIN_DIM, KAPPA_STAR
+BASIN_DIM: int = 64
+KAPPA_STAR: float = 64.0
 
 DOC_PHI_MIN: float = 0.0
 QUERY_PHI_MIN: float = 0.0

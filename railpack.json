@@ -7,7 +7,7 @@
   "steps": {
     "build": {
       "commands": [
-        { "cmd": "uv sync --frozen --no-dev" }
+        { "cmd": "uv sync --no-dev" }
       ]
     }
   },

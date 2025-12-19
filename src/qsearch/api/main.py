@@ -28,7 +28,8 @@ if _cfg.cors_allow_origins:
     )
 
 app.include_router(v1_router, prefix="/api/v1")
-app.include_router(auth_router)
+if _cfg.session_secret:
+    app.include_router(auth_router)
 
 
 class SearchRequest(BaseModel):
