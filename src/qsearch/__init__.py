@@ -1,1 +1,3 @@
-__all__ = ["core", "crawler", "index", "search", "api"]
+from qsearch import api, core, crawler, index, search
+
+__all__ = ["api", "core", "crawler", "index", "search"]
