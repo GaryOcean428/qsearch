@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: 0 0% 100%;
+  --bg-secondary: 220 20% 98%;
+  --text-primary: 222 47% 11%;
+  --text-secondary: 215 16% 47%;
+  --border: 214 32% 91%;
+  --hover: 220 14% 96%;
+  --accent: 246 76% 57%;
+}
+
+.dark {
+  --bg-primary: 222 47% 6%;
+  --bg-secondary: 222 47% 10%;
+  --text-primary: 210 40% 98%;
+  --text-secondary: 215 20% 65%;
+  --border: 217 19% 18%;
+  --hover: 222 47% 14%;
+  --accent: 171 100% 40%;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background: hsl(var(--bg-primary));
+  color: hsl(var(--text-primary));
+}
+
+/* Neon glow utilities */
+.glow-electric-blue { box-shadow: 0 0 24px rgba(37,99,235,0.45); }
+.glow-electric-cyan { box-shadow: 0 0 24px rgba(0,206,201,0.45); }
+.glow-electric-indigo { box-shadow: 0 0 24px rgba(79,70,229,0.45); }
+.glow-electric-purple { box-shadow: 0 0 24px rgba(108,92,231,0.45); }
+.glow-electric-magenta { box-shadow: 0 0 24px rgba(253,121,168,0.45); }
+.glow-electric-pink { box-shadow: 0 0 24px rgba(236,72,153,0.45); }
+.glow-electric-coral { box-shadow: 0 0 24px rgba(255,71,87,0.45); }
+.glow-electric-orange { box-shadow: 0 0 24px rgba(255,118,117,0.45); }
+.glow-electric-yellow { box-shadow: 0 0 24px rgba(253,203,110,0.45); }
+.glow-electric-green { box-shadow: 0 0 24px rgba(34,197,94,0.45); }
+.glow-electric-lavender { box-shadow: 0 0 24px rgba(162,155,254,0.45); }
+
+.neon-text-cyan { text-shadow: 0 0 18px rgba(0,206,201,0.55); }
+.neon-text-blue { text-shadow: 0 0 18px rgba(37,99,235,0.55); }
+.neon-text-pink { text-shadow: 0 0 18px rgba(236,72,153,0.55); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

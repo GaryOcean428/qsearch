@@ -1,0 +1,11 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "provider": "node",
+  "deploy": {
+    "startCommand": "npm run preview",
+    "variables": {
+      "NODE_ENV": "production",
+      "VITE_QSEARCH_API_BASE": ""
+    }
+  }
+}
