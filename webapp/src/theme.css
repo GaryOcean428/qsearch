@@ -43,9 +43,8 @@
   --glass-opacity: 0.15; /* Semi-transparent */
 }
 
-/* Dark Theme (Default) - Cyberpunk neon glows */
-.dark,
-:root {
+/* Dark Theme - Cyberpunk neon glows */
+.dark {
   /* Backgrounds */
   --bg-body: var(--color-light-shade-100); /* Deep blue */
   --bg-panel: rgba(16, 43, 64, var(--glass-opacity)); /* Glassy dark */
@@ -75,35 +74,38 @@
   --button-hover-shadow: 0 0 14px 2px rgba(57, 255, 20, 0.8), 0 0 12px rgba(238, 255, 0, 0.8);
 }
 
-/* Light Theme - Subtle shadows for professional depth */
+/* Light Theme - Professional, clean, WCAG compliant */
 .light {
-  /* Backgrounds - Inverted for light mode */
-  --bg-body: var(--color-white); /* Off-white */
-  --bg-panel: rgba(211, 226, 244, var(--glass-opacity)); /* Glassy light */
-  --bg-header: var(--color-light);
-  --bg-footer: var(--color-light-shade-50);
-  --bg-input: #e0f0ff; /* Light blue tint */
-  --bg-code: rgba(137, 207, 240, 0.2); /* Subtle light code bg */
+  /* Backgrounds - Clean whites and light grays */
+  --bg-body: #f8fafc; /* Soft white */
+  --bg-panel: rgba(255, 255, 255, 0.9); /* Near-solid white panels */
+  --bg-header: #ffffff;
+  --bg-footer: #f1f5f9;
+  --bg-input: #ffffff;
+  --bg-code: #f1f5f9;
 
-  /* Text Colors */
-  --text-primary: var(--color-dark);
-  --text-secondary: var(--color-medium);
-  --text-heading: var(--color-primary); /* Blue for headings */
-  --text-disabled: var(--color-disabled);
+  /* Text Colors - WCAG AA compliant contrast */
+  --text-primary: #1e293b; /* Slate 800 - 12.6:1 contrast */
+  --text-secondary: #475569; /* Slate 600 - 7.5:1 contrast */
+  --text-heading: #0369a1; /* Sky 700 - good contrast */
+  --text-disabled: #94a3b8; /* Slate 400 */
 
   /* Borders and Dividers */
-  --border-color: var(--color-light-shade-50);
-  --divider-glow: var(--shadow-subtle); /* Shadows instead of glows */
+  --border-color: #e2e8f0; /* Slate 200 */
+  --divider-glow: 0 1px 3px rgba(0, 0, 0, 0.08);
 
-  /* Accents - Softer in light mode */
-  --accent-primary: var(--color-primary);
-  --accent-secondary: var(--color-secondary-shade-50); /* Yellow for visibility */
-  --accent-hover: var(--color-secondary);
+  /* Accents - Accessible colors */
+  --accent-primary: #0284c7; /* Sky 600 */
+  --accent-secondary: #059669; /* Emerald 600 */
+  --accent-hover: #0369a1; /* Sky 700 */
 
-  /* Effects */
-  --panel-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Subtle shadows */
-  --button-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --button-hover-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  /* Effects - Subtle shadows */
+  --panel-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --button-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --button-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+
+  /* Override color-dark for button text */
+  --color-dark: #ffffff;
 }
 
 /* Base Styles - Apply to all themes */
